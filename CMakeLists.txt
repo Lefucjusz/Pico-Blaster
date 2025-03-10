@@ -61,11 +61,14 @@ target_include_directories(Pico-W-A2DP-Sink PRIVATE
 # Add directories
 add_subdirectory(audio_i2s)
 add_subdirectory(bluetooth)
+add_subdirectory(power_manager)
+add_subdirectory(utils)
 
 # Add any user requested libraries
 target_link_libraries(Pico-W-A2DP-Sink
         bluetooth
         pico_cyw43_arch_none
+        power_manager
 )
 
 pico_add_extra_outputs(Pico-W-A2DP-Sink)

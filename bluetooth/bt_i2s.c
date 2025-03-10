@@ -66,8 +66,8 @@ static int bt_i2s_audio_init(uint8_t channels, uint32_t sample_rate, bt_i2s_samp
     ctx.buffer_request = false;
     
     ctx.i2s_config.pio = pio0;
-    ctx.i2s_config.data_pin = 28;
-    ctx.i2s_config.clock_pin_base = 26;
+    ctx.i2s_config.data_pin = 18;
+    ctx.i2s_config.clock_pin_base = 16;
     ctx.i2s_config.sample_size = sizeof(int16_t);
     ctx.i2s_config.buffer_frames_count = BT_I2S_FRAMES_PER_BUFFER;
     ctx.i2s_config.dma_handler = bt_i2s_dma_callback;

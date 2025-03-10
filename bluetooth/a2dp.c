@@ -4,7 +4,6 @@
 #include <btstack.h>
 #include <btstack_resample.h>
 #include <classic/a2dp_sink.h>
-#include <pico/cyw43_arch.h>
 
 #define BT_A2DP_SBC_HEADER_SIZE 12 // Without CRC
 #define BT_A2DP_MEDIA_HEADER_SIZE 12 // Without CRC
@@ -55,6 +54,7 @@ typedef struct
     uint32_t request_frames;
     bool stream_started;
     bool media_initialized;
+    bt_a2dp_stream_established_callback_t stream_established_callback;
 } bt_a2dp_ctx_t;
 
 static bt_a2dp_ctx_t ctx;
@@ -236,8 +236,9 @@ static void bt_a2dp_packet_handler(uint8_t packet_type, uint16_t channel, uint8_
             }
 
             ctx.seid = a2dp_subevent_stream_established_get_local_seid(packet);
-            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, true); // Indicate that the stream has been established
-
+            if (ctx.stream_established_callback != NULL) {
+                ctx.stream_established_callback(true);
+            }
             break;
 
         case A2DP_SUBEVENT_STREAM_STARTED:
@@ -253,7 +254,9 @@ static void bt_a2dp_packet_handler(uint8_t packet_type, uint16_t channel, uint8_
 
         case A2DP_SUBEVENT_STREAM_RELEASED:
             bt_a2dp_media_processing_close();
-            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, false); // Indicate that the stream has been released
+            if (ctx.stream_established_callback != NULL) {
+                ctx.stream_established_callback(false);
+            }
             break;
 
         default:
@@ -362,4 +365,9 @@ void bt_a2dp_init(void)
                                                                    sbc_capabilities, sizeof(sbc_capabilities), 
                                                                    ctx.codec_config, sizeof(ctx.codec_config));
     ctx.seid = avdtp_local_seid(ep);
+}
+
+void bt_a2dp_set_stream_established_callback(bt_a2dp_stream_established_callback_t callback)
+{
+    ctx.stream_established_callback = callback;
 }

@@ -13,8 +13,9 @@ typedef struct
     btstack_packet_callback_registration_t hci_registration;
     bd_addr_t local_addr;
     const char *pin;
-    bt_init_done_callback_t init_done_callback;
-    void *init_done_arg;
+    btstack_timer_source_t periodic_timer;
+    bt_periodic_callback_t periodic_callback;
+    uint32_t periodic_interval_ms;
 } bt_ctx_t;
 
 static bt_ctx_t ctx;
@@ -34,9 +35,6 @@ static void bt_packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *pa
                 break;
             }
             gap_local_bd_addr(ctx.local_addr);
-            if (ctx.init_done_callback != NULL) {
-                ctx.init_done_callback(ctx.init_done_arg);
-            }
             break;
 
         case HCI_EVENT_PIN_CODE_REQUEST:
@@ -49,15 +47,25 @@ static void bt_packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *pa
     }
 }
 
-int bt_init(const char *name, const char *pin, bt_init_done_callback_t init_done_callback, void *init_done_arg)
+static void bt_periodic_timer_callback(btstack_timer_source_t *ts)
+{
+    /* Run callback */
+    if (ctx.periodic_callback != NULL) {
+        ctx.periodic_callback();
+    }
+
+    /* Restart timer */
+    btstack_run_loop_set_timer(ts, ctx.periodic_interval_ms);
+    btstack_run_loop_add_timer(ts);
+}
+
+int bt_init(const char *name, const char *pin)
 {
     if ((name == NULL) || (pin == NULL)) {
         return -EINVAL;
     }
 
     ctx.pin = pin;
-    ctx.init_done_callback = init_done_callback;
-    ctx.init_done_arg = init_done_arg;
 
     l2cap_init();
 
@@ -75,6 +83,30 @@ int bt_init(const char *name, const char *pin, bt_init_done_callback_t init_done
     hci_add_event_handler(&ctx.hci_registration);
 
     return 0;
+}
+
+void bt_set_stream_established_callback(bt_a2dp_stream_established_callback_t callback)
+{
+    bt_a2dp_set_stream_established_callback(callback);
+}
+
+void bt_set_periodic_callback(bt_periodic_callback_t callback, uint32_t interval_ms)
+{
+    /* Remove any previously set timer */
+    btstack_run_loop_remove_timer(&ctx.periodic_timer);
+
+    /* Sanity check */
+    if ((callback == NULL) || (interval_ms == 0)) {
+        return;
+    }
+
+    /* Add new timer to handle periodic callback */
+    ctx.periodic_callback = callback;
+    ctx.periodic_interval_ms = interval_ms;
+
+    btstack_run_loop_set_timer_handler(&ctx.periodic_timer, bt_periodic_timer_callback);
+    btstack_run_loop_set_timer(&ctx.periodic_timer, ctx.periodic_interval_ms);
+    btstack_run_loop_add_timer(&ctx.periodic_timer);
 }
 
 void bt_run(void)

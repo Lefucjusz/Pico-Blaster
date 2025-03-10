@@ -1,6 +1,13 @@
 #pragma once
 
-typedef void(*bt_init_done_callback_t)(void *arg);
+#include "a2dp.h"
+#include <stdbool.h>
+#include <stdint.h>
 
-int bt_init(const char *name, const char *pin, bt_init_done_callback_t init_done_callback, void *init_done_arg);
+typedef void (*bt_periodic_callback_t)(void);
+
+int bt_init(const char *name, const char *pin);
+void bt_set_stream_established_callback(bt_a2dp_stream_established_callback_t callback);
+void bt_set_periodic_callback(bt_periodic_callback_t callback, uint32_t interval_ms);
+
 void bt_run(void);
