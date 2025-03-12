@@ -47,7 +47,7 @@ pico_set_program_version(Pico-W-A2DP-Sink "0.1")
 
 # Modify the below lines to enable/disable output over UART/USB
 pico_enable_stdio_uart(Pico-W-A2DP-Sink 0)
-pico_enable_stdio_usb(Pico-W-A2DP-Sink 0)
+pico_enable_stdio_usb(Pico-W-A2DP-Sink 1)
 
 # Add the standard library to the build
 target_link_libraries(Pico-W-A2DP-Sink
@@ -60,9 +60,10 @@ target_include_directories(Pico-W-A2DP-Sink PRIVATE
 
 # Add directories
 add_subdirectory(audio_i2s)
+add_subdirectory(battery)
 add_subdirectory(bluetooth)
 add_subdirectory(power_manager)
-add_subdirectory(utils)
+add_subdirectory(utilities)
 
 # Add any user requested libraries
 target_link_libraries(Pico-W-A2DP-Sink

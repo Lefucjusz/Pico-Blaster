@@ -20,4 +20,5 @@ target_link_libraries(bluetooth
         pico_btstack_cyw43
         pico_btstack_sbc_decoder
         audio_i2s
+        utilities
 )

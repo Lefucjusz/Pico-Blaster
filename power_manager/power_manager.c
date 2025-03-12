@@ -1,12 +1,15 @@
 #include "power_manager.h"
-#include <utilities.h>
+#include <utils.h>
+#include <battery.h>
 #include <hardware/gpio.h>
 
 typedef struct
 {
     bool connected;
+    bool battery_low;
     uint32_t last_disconnect_tick;
     uint32_t last_press_tick;
+    uint32_t last_battery_tick;
 } power_manager_ctx_t;
 
 static power_manager_ctx_t ctx;
@@ -19,6 +22,12 @@ static void power_manager_enable_power(bool enable)
 static void power_manager_enable_status_led(bool enable)
 {
     gpio_put(POWER_MANAGER_STATUS_LED_PIN, enable);
+}
+
+static void power_manager_toggle_status_led(void)
+{
+    const bool state = gpio_get(POWER_MANAGER_STATUS_LED_PIN);
+    gpio_put(POWER_MANAGER_STATUS_LED_PIN, !state);
 }
 
 static bool power_manager_is_button_pressed(void)
@@ -57,6 +66,9 @@ void power_manager_init(void)
     /* Enable power switch */
     power_manager_enable_power(true);
 
+    /* Initialize battery driver */
+    battery_init();
+
     /* Blink status LED to indicate the device is on */
     power_manager_enable_status_led(true);
     sleep_ms(POWER_MANAGER_POWER_ON_LED_BLINK_TIME_MS);
@@ -75,21 +87,34 @@ void power_manager_task(void)
 {
     const uint32_t current_tick = get_ticks();
 
+    /* Check battery state */
+    if ((current_tick - ctx.last_battery_tick) >= POWER_MANAGER_BATTERY_CHECK_INTERVAL_MS) {
+        const uint8_t soc = battery_get_percent();
+        if (soc <= POWER_MANAGER_BATTERY_CRITICAL_SOC) {
+            power_manager_enable_power(false); // Turn off due to discharged battery
+        }
+        ctx.battery_low = (soc <= POWER_MANAGER_BATTERY_LOW_SOC);
+        ctx.last_battery_tick = current_tick;
+    }
+
+    /* Check if turn off due to no connected device */
+    if (((current_tick - ctx.last_disconnect_tick) >= POWER_MANAGER_AUTO_POWER_OFF_DELAY_MS) && !ctx.connected) {
+        power_manager_enable_power(false); // Turn off due to no connetion
+    }
+
     /* Check if turn off by button */
-    if (power_manager_is_button_pressed() && ((current_tick - ctx.last_press_tick) >= POWER_MANAGER_POWER_OFF_DELAY_MS)) {
+    if (((current_tick - ctx.last_press_tick) >= POWER_MANAGER_POWER_OFF_DELAY_MS) && power_manager_is_button_pressed()) {
         // TODO disconnect? Mute audio?
         power_manager_enable_status_led(true); // Turn on status LED
         power_manager_enable_power(false); // Disable power switch
         return;
     }
 
-    /* Check if turn off due to no connected device */
-    if (!ctx.connected && ((current_tick - ctx.last_disconnect_tick) >= POWER_MANAGER_AUTO_POWER_OFF_DELAY_MS)) {
-        power_manager_enable_power(false); // Disable power switch
-        return;
+    /* Blink LED if battery low */
+    if (ctx.battery_low) {
+        power_manager_toggle_status_led();
     }
-
-    /* TODO add blinking when battery low */
-    /* TODO add power off when battery low */
-    
+    else {
+        power_manager_enable_status_led(false);
+    }    
 }

@@ -1,4 +1,5 @@
 #include "bt_i2s.h"
+#include <utils.h>
 #include <audio_i2s.h>
 #include <math.h>
 #include <btstack.h>
@@ -7,8 +8,6 @@
 
 #define BT_I2S_TASK_INTERVAL_MS 5
 #define BT_I2S_FRAMES_PER_BUFFER 1024
-
-#define BT_I2S_CLAMP(val, min, max) MIN(max, MAX(val, min))
 
 typedef void (*bt_i2s_samples_callback_t)(int16_t *buffer, uint16_t samples_count);
 
@@ -115,7 +114,7 @@ static void bt_i2s_audio_set_volume(uint8_t volume)
     const float a = 1e-3f;
     const float b = 6.908f;
     ctx.volume = a * expf(b * volume_normalized);
-	ctx.volume = BT_I2S_CLAMP(ctx.volume, 0.0f, 1.0f);
+	ctx.volume = CLAMP(ctx.volume, 0.0f, 1.0f);
 }
 
 static const btstack_audio_sink_t bt_i2s_sink = {

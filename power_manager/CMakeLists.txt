@@ -12,5 +12,6 @@ target_include_directories(power_manager
 
 target_link_libraries(power_manager
     INTERFACE
+        battery
         utilities
 )
