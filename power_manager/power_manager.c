@@ -2,6 +2,7 @@
 #include <utils.h>
 #include <battery.h>
 #include <hardware/gpio.h>
+#include <hardware/watchdog.h>
 
 typedef struct
 {
@@ -47,6 +48,9 @@ void power_manager_init(void)
     /* Wait to filter out accidental button clicks */
     sleep_ms(POWER_MANAGER_POWER_ON_DELAY_MS);
 
+    /* Enable watchdog */
+    watchdog_enable(POWER_MANAGER_WATCHDOG_TIMEOUT_MS, true);
+
     /* Configure GPIOs */
     gpio_set_function(POWER_MANAGER_BUTTON_PIN, GPIO_FUNC_SIO);
     gpio_set_dir(POWER_MANAGER_BUTTON_PIN, GPIO_IN);
@@ -85,6 +89,9 @@ void power_manager_set_connected(bool connected)
 
 void power_manager_task(void)
 {
+    /* Refresh watchdog */
+    watchdog_update();
+
     const uint32_t current_tick = get_ticks();
 
     /* Check battery state */
