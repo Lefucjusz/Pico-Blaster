@@ -8,7 +8,7 @@
 #define ALIGN(var, size) __attribute__((aligned(size))) var
 
 /* I2S peripheral configuration structure */
-typedef struct audio_i2s_config 
+typedef struct 
 {
     PIO pio;
     uint8_t data_pin;
@@ -19,7 +19,7 @@ typedef struct audio_i2s_config
     void (*dma_handler)(void);
 } audio_i2s_config_t;
 
-typedef struct audio_i2s_pio_ctx
+typedef struct
 {
     uint8_t sm;
     uint8_t sm_offset;
