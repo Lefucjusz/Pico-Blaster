@@ -1,17 +1,17 @@
-add_library(battery INTERFACE)
+add_library(battery STATIC)
 
 target_sources(battery
-    INTERFACE
+    PRIVATE
         battery.c
 )
 
 target_include_directories(battery
-    INTERFACE
+    PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}
 )
 
 target_link_libraries(battery
-    INTERFACE
+    PRIVATE
         hardware_adc
         utilities
 )

@@ -44,6 +44,7 @@ typedef struct
     uint8_t seid;
     sbc_configuration_t sbc_config;
     uint32_t sbc_frame_size;
+    uint8_t sbc_frame[BT_A2DP_MAX_SBC_FRAME_SIZE];
     btstack_ring_buffer_t sbc_frame_ring_buffer;
     uint8_t sbc_frame_storage[BT_A2DP_SBC_FRAME_STORAGE_SIZE];
     btstack_ring_buffer_t decoded_audio_ring_buffer;
@@ -52,6 +53,7 @@ typedef struct
     btstack_sbc_decoder_state_t sbc_decoder;
     int16_t *request_buffer;
     uint32_t request_frames;
+    uint8_t output_buffer[BT_A2DP_DECODED_AUDIO_STORAGE_SIZE];
     bool stream_started;
     bool media_initialized;
     bt_a2dp_stream_established_callback_t stream_established_callback;
@@ -60,21 +62,21 @@ typedef struct
 static bt_a2dp_ctx_t ctx;
 
 /* All configurations with bitpool 2-53 are supported */
-static const uint8_t sbc_capabilities[] = {
+static const uint8_t sbc_capabilities[] =
+{
     0xFF, 0xFF, 2, 53
 };
 
 static void bt_a2dp_sbc_decoder_callback(int16_t *data, int num_frames, int num_channels, int sample_rate, void *context)
 {
     /* Resample new frames */
-    uint8_t output_buffer[BT_A2DP_DECODED_AUDIO_STORAGE_SIZE];
-    const uint32_t resampled_frames = btstack_resample_block(&ctx.resampler, data, num_frames, (int16_t *)output_buffer);
+    const uint32_t resampled_frames = btstack_resample_block(&ctx.resampler, data, num_frames, (int16_t *)ctx.output_buffer);
 
     /* Store resampled frames in pending request buffer */
     const uint32_t frames_to_copy = btstack_min(resampled_frames, ctx.request_frames);
     const uint32_t bytes_to_copy = frames_to_copy * BT_A2DP_BYTES_PER_FRAME;
     if (frames_to_copy > 0) {
-        memcpy(ctx.request_buffer, output_buffer, bytes_to_copy);
+        memcpy(ctx.request_buffer, ctx.output_buffer, bytes_to_copy);
         ctx.request_frames -= frames_to_copy;
         ctx.request_buffer += frames_to_copy * BT_A2DP_CHANNELS_PER_FRAME;
     }
@@ -83,7 +85,7 @@ static void bt_a2dp_sbc_decoder_callback(int16_t *data, int num_frames, int num_
     const uint32_t frames_to_store = resampled_frames - frames_to_copy;
     if (frames_to_store > 0) {
         const uint32_t bytes_to_store = frames_to_store * BT_A2DP_BYTES_PER_FRAME;
-        btstack_ring_buffer_write(&ctx.decoded_audio_ring_buffer, &output_buffer[bytes_to_copy], bytes_to_store);
+        btstack_ring_buffer_write(&ctx.decoded_audio_ring_buffer, &ctx.output_buffer[bytes_to_copy], bytes_to_store);
     }
 }
 
@@ -106,10 +108,9 @@ static void bt_a2dp_read_samples_callback(int16_t *buffer, uint16_t num_frames)
     ctx.request_frames = num_frames - frames_read;
 
     /* Start decoding new SBC frames, the remaining PCM frames from this request will be filled in SBC decoder callback */
-    uint8_t sbc_frame[BT_A2DP_MAX_SBC_FRAME_SIZE];
     while ((ctx.request_frames > 0) && (btstack_ring_buffer_bytes_available(&ctx.sbc_frame_ring_buffer) >= ctx.sbc_frame_size)) {
-        btstack_ring_buffer_read(&ctx.sbc_frame_ring_buffer, sbc_frame, ctx.sbc_frame_size, &bytes_read);
-        btstack_sbc_decoder_process_data(&ctx.sbc_decoder, 0, sbc_frame, ctx.sbc_frame_size);
+        btstack_ring_buffer_read(&ctx.sbc_frame_ring_buffer, ctx.sbc_frame, ctx.sbc_frame_size, &bytes_read);
+        btstack_sbc_decoder_process_data(&ctx.sbc_decoder, 0, ctx.sbc_frame, ctx.sbc_frame_size);
     }
 }
 
@@ -361,9 +362,9 @@ void bt_a2dp_init(void)
     a2dp_sink_register_packet_handler(bt_a2dp_packet_handler);
     a2dp_sink_register_media_handler(bt_a2dp_media_handler);
     
-    avdtp_stream_endpoint_t *ep = a2dp_sink_create_stream_endpoint(AVDTP_AUDIO, AVDTP_CODEC_SBC, 
-                                                                   sbc_capabilities, sizeof(sbc_capabilities), 
-                                                                   ctx.codec_config, sizeof(ctx.codec_config));
+    const avdtp_stream_endpoint_t *ep = a2dp_sink_create_stream_endpoint(AVDTP_AUDIO, AVDTP_CODEC_SBC, 
+                                                                         sbc_capabilities, sizeof(sbc_capabilities), 
+                                                                         ctx.codec_config, sizeof(ctx.codec_config));
     ctx.seid = avdtp_local_seid(ep);
 }
 

@@ -26,7 +26,8 @@ typedef struct
 static battery_ctx_t ctx;
 
 /* Data from some li-ion discharge curve found in Google */
-static const battery_curve_point_t battery_lut[BATTERY_LUT_SIZE] = {
+static const battery_curve_point_t battery_lut[BATTERY_LUT_SIZE] =
+{
     {3.10f, 0},
     {3.55f, 20},
     {3.65f, 40},
@@ -68,18 +69,18 @@ uint8_t battery_get_percent(void)
     
     /* Handle out-of-range cases */
     if (voltage <= battery_lut[0].voltage) {
-        return PERCENT_MIN;
+        return UTILS_PERCENT_MIN;
     }
     if (voltage >= battery_lut[BATTERY_LUT_SIZE - 1].voltage) {
-        return PERCENT_MAX;
+        return UTILS_PERCENT_MAX;
     }
 
     /* Find proper range and interpolate */
     for (size_t i = 1; i < BATTERY_LUT_SIZE; ++i) {
         if (voltage <= battery_lut[i].voltage) {
-            return (uint8_t)INTERP1D(voltage, battery_lut[i - 1].voltage, battery_lut[i - 1].percent, battery_lut[i].voltage, battery_lut[i].percent);
+            return (uint8_t)UTILS_INTERP1D(voltage, battery_lut[i - 1].voltage, battery_lut[i - 1].percent, battery_lut[i].voltage, battery_lut[i].percent);
         }
     }
     
-    return PERCENT_MIN;
+    return UTILS_PERCENT_MIN;
 }

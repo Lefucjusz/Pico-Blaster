@@ -80,7 +80,6 @@ static void bt_avrcp_controller_packet_handler(uint8_t packet_type, uint16_t cha
         default:
             break;
     }
-
 }
 
 static void bt_avrcp_target_packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size)
@@ -111,4 +110,6 @@ void bt_avrcp_init(void)
     avrcp_register_packet_handler(bt_avrcp_packet_handler);
     avrcp_controller_register_packet_handler(bt_avrcp_controller_packet_handler);
     avrcp_target_register_packet_handler(bt_avrcp_target_packet_handler);
+
+    bt_avrcp_volume_change_callback(BT_AVRCP_DEFAULT_VOLUME);
 }

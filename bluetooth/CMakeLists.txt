@@ -1,7 +1,7 @@
-add_library(bluetooth INTERFACE)
+add_library(bluetooth STATIC)
 
 target_sources(bluetooth
-    INTERFACE
+    PRIVATE
         a2dp.c
         avrcp.c
         bt.c
@@ -10,15 +10,17 @@ target_sources(bluetooth
 )
 
 target_include_directories(bluetooth
-    INTERFACE
+    PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}
 )
 
 target_link_libraries(bluetooth
-    INTERFACE
-        pico_btstack_classic
+    PUBLIC
+        pico_cyw43_arch_none
         pico_btstack_cyw43
+        pico_btstack_classic
         pico_btstack_sbc_decoder
+    PRIVATE
         audio_i2s
-        utilities
+        dsp
 )

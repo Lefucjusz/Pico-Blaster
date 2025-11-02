@@ -1,5 +1,4 @@
 #include <pico/stdlib.h>
-#include <pico/cyw43_arch.h>
 #include <bt.h>
 #include <power_manager.h>
 
@@ -7,10 +6,6 @@ int main(void)
 {
     stdio_init_all();
     power_manager_init();
-
-    if (cyw43_arch_init()) {
-        panic("Failed to init cyw43_arch!");
-    }
 
     /* Initialize BT */
     bt_init("Pico Blaster", "0000");

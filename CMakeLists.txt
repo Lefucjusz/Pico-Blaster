@@ -15,9 +15,9 @@ if(WIN32)
 else()
     set(USERHOME $ENV{HOME})
 endif()
-set(sdkVersion 2.1.1)
+set(sdkVersion 2.2.0)
 set(toolchainVersion 14_2_Rel1)
-set(picotoolVersion 2.1.1)
+set(picotoolVersion 2.2.0)
 set(picoVscode ${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
 if (EXISTS ${picoVscode})
     include(${picoVscode})
@@ -28,7 +28,7 @@ set(PICO_BOARD pico_w CACHE STRING "Board type")
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)
 
-project(Pico-W-A2DP-Sink C CXX ASM)
+project(Pico-Blaster C CXX ASM)
 
 # Show memory usage summary
 add_link_options(
@@ -40,21 +40,24 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(Pico-W-A2DP-Sink main.c)
+add_executable(Pico-Blaster main.c)
 
-pico_set_program_name(Pico-W-A2DP-Sink "Pico-W-A2DP-Sink")
-pico_set_program_version(Pico-W-A2DP-Sink "0.1")
+pico_set_program_name(Pico-Blaster "Pico-Blaster")
+pico_set_program_version(Pico-Blaster "0.1")
 
 # Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(Pico-W-A2DP-Sink 0)
-pico_enable_stdio_usb(Pico-W-A2DP-Sink 0)
+pico_enable_stdio_uart(Pico-Blaster 0)
+pico_enable_stdio_usb(Pico-Blaster 0)
 
 # Add the standard library to the build
-target_link_libraries(Pico-W-A2DP-Sink
-        pico_stdlib)
+target_link_libraries(Pico-Blaster
+    PRIVATE
+        pico_stdlib
+)
 
 # Add the standard include files to the build
-target_include_directories(Pico-W-A2DP-Sink PRIVATE
+target_include_directories(Pico-Blaster
+    PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
 )
 
@@ -62,14 +65,15 @@ target_include_directories(Pico-W-A2DP-Sink PRIVATE
 add_subdirectory(audio_i2s)
 add_subdirectory(battery)
 add_subdirectory(bluetooth)
+add_subdirectory(dsp)
 add_subdirectory(power_manager)
 add_subdirectory(utilities)
 
 # Add any user requested libraries
-target_link_libraries(Pico-W-A2DP-Sink
+target_link_libraries(Pico-Blaster
+    PRIVATE
         bluetooth
-        pico_cyw43_arch_none
         power_manager
 )
 
-pico_add_extra_outputs(Pico-W-A2DP-Sink)
+pico_add_extra_outputs(Pico-Blaster)

@@ -1,13 +1,12 @@
 #include "bt_i2s.h"
-#include <utils.h>
+#include <dsp.h>
 #include <audio_i2s.h>
-#include <math.h>
 #include <btstack.h>
 
 #define BT_I2S_VOLUME_MAX 127 // Max value according to AVRCP spec
 
 #define BT_I2S_TASK_INTERVAL_MS 5
-#define BT_I2S_FRAMES_PER_BUFFER 1024
+#define BT_I2S_FRAMES_PER_BUFFER 1536
 
 typedef void (*bt_i2s_samples_callback_t)(int16_t *buffer, uint16_t samples_count);
 
@@ -29,14 +28,6 @@ static void bt_i2s_dma_callback(void)
     audio_i2s_clear_dma_irq(&ctx.i2s);
 }
 
-static void bt_i2s_scale_volume(int16_t *buffer, size_t frames_count)
-{
-    for (size_t i = 0; i < frames_count; ++i) {
-        buffer[2 * i] *= ctx.volume;
-        buffer[2 * i + 1] *= ctx.volume;
-    }
-}
-
 static void bt_i2s_fill_next_buffer(void)
 {
     int16_t *buffer = audio_i2s_get_next_buffer(&ctx.i2s);
@@ -44,7 +35,7 @@ static void bt_i2s_fill_next_buffer(void)
 
     // TODO duplicate samples for mono
 
-    bt_i2s_scale_volume(buffer, BT_I2S_FRAMES_PER_BUFFER);
+    dsp_process(buffer, BT_I2S_FRAMES_PER_BUFFER);
 }
 
 static void bt_i2s_task(btstack_timer_source_t *ts)
@@ -74,6 +65,8 @@ static int bt_i2s_audio_init(uint8_t channels, uint32_t sample_rate, bt_i2s_samp
 
     ctx.i2s.config = &ctx.i2s_config;
     audio_i2s_init(&ctx.i2s);
+
+    dsp_init(sample_rate);
 
     return 0;
 }
@@ -105,19 +98,12 @@ static void bt_i2s_close(void)
 
 static void bt_i2s_audio_set_volume(uint8_t volume)
 {
-    if (volume == 0) {
-        ctx.volume = 0.0f;
-        return;
-    }
-
     const float volume_normalized = volume / (float)BT_I2S_VOLUME_MAX;
-    const float a = 1e-3f;
-    const float b = 6.908f;
-    ctx.volume = a * expf(b * volume_normalized);
-	ctx.volume = CLAMP(ctx.volume, 0.0f, 1.0f);
+    dsp_set_volume(volume_normalized);
 }
 
-static const btstack_audio_sink_t bt_i2s_sink = {
+static const btstack_audio_sink_t bt_i2s_sink =
+{
     .init = bt_i2s_audio_init,
     .start_stream = bt_i2s_start_stream,
     .stop_stream = bt_i2s_stop_stream,

@@ -1,17 +1,17 @@
-add_library(power_manager INTERFACE)
+add_library(power_manager STATIC)
 
 target_sources(power_manager 
-    INTERFACE
+    PRIVATE
         power_manager.c
 )
 
 target_include_directories(power_manager 
-    INTERFACE 
+    PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}
 )
 
 target_link_libraries(power_manager
-    INTERFACE
+    PRIVATE
         battery
         utilities
 )

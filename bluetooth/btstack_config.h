@@ -1,10 +1,6 @@
 #pragma once
 
-// BTstack features that can be enabled
-// #define ENABLE_LOG_INFO
-// #define ENABLE_LOG_ERROR
 #define ENABLE_PRINTF_HEXDUMP
-#define ENABLE_SCO_OVER_HCI
 
 #ifdef ENABLE_BLE
 #define ENABLE_GATT_CLIENT_PAIRING
@@ -76,11 +72,3 @@
 
 // Some USB dongles take longer to respond to HCI reset (e.g. BCM20702A)
 #define HCI_RESET_RESEND_TIMEOUT_MS 1000
-
-#define ENABLE_SOFTWARE_AES128
-#define ENABLE_MICRO_ECC_FOR_LE_SECURE_CONNECTIONS
-
-// #define HAVE_BTSTACK_STDIN
-
-// To get the audio demos working even with HCI dump at 115200, this truncates long ACL packets
-// #define HCI_DUMP_STDOUT_MAX_SIZE_ACL 100

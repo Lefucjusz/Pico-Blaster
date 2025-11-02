@@ -7,6 +7,7 @@
 #include <l2cap.h>
 #include <btstack_event.h>
 #include <btstack_run_loop.h>
+#include <pico/cyw43_arch.h>
 
 typedef struct 
 {
@@ -66,6 +67,10 @@ int bt_init(const char *name, const char *pin)
     }
 
     ctx.pin = pin;
+
+    if (cyw43_arch_init()) {
+        panic("Failed to init cyw43_arch!");
+    }
 
     l2cap_init();
 
