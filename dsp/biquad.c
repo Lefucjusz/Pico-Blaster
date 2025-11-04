@@ -4,6 +4,9 @@
 #include <math.h>
 #include <stddef.h>
 
+/* Filter equations are based on Robert Bristow-Johnson's "Audio EQ Cookbook":
+ * https://webaudio.github.io/Audio-EQ-Cookbook/audio-eq-cookbook.html */
+
 typedef union
 {
     struct {
